@@ -16,6 +16,9 @@ private:
     std::vector<unsigned char> SHA256(const std::vector<unsigned char>& input);
 
     // AES реализация в будущем
+    void keyExpansion();
+    void rotWord(unsigned char word[4]);
+    void subWord(unsigned char word[4]);
     
 public:
     DataEncryptor(const std::string& password);
