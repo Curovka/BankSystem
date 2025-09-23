@@ -48,3 +48,179 @@ DataEncryptor::DataEncryptor(const std::string& passwordKey) {
 std::string DataEncryptor::hashPassword(const std::string& password) {
     //
 }
+
+// PBKDF2 реализация
+//######################################################################################################################################
+//--------------------------------------------------------------------------------------------------------------------------------------
+//######################################################################################################################################
+std::vector<unsigned char> DataEncryptor::generateKey(const std::string& password) {
+    std::vector<unsigned char> salt = {0x73, 0x61, 0x6C, 0x74}; // "salt"
+    return PBKDF2HMACSHA256(password, salt, 10000, 32); // 10000 - количество итераций; 32 - длина ключа
+}
+
+std::vector<unsigned char> DataEncryptor::PBKDF2HMACSHA256(const std::string& password, const std::vector<unsigned char>& salt, int iterations, int length) {
+    
+    std::vector<unsigned char> derivedKey;
+    std::vector<unsigned char> passwordBytes(password.begin(), password.end());
+    
+    int block_count = (length + 31) / 32;
+    
+    for (int i = 1; i <= block_count; ++i) {
+        
+        //add random salt*** в будущем
+
+        std::vector<unsigned char> saltWithIndex = salt;
+        saltWithIndex.push_back((i >> 24) & 0xFF);
+        saltWithIndex.push_back((i >> 16) & 0xFF);
+        saltWithIndex.push_back((i >> 8) & 0xFF);
+        saltWithIndex.push_back(i & 0xFF);
+        
+        //HMAC
+        auto current = HMACSHA256(passwordBytes, saltWithIndex);
+        auto result = current;
+        
+        //XOR
+        for (int j = 1; j < iterations; ++j) {
+            current = HMACSHA256(passwordBytes, current);
+            for (size_t k = 0; k < result.size(); ++k) {
+                result[k] ^= current[k];
+            }
+        }
+        
+        //обрезка
+        derivedKey.insert(derivedKey.end(), result.begin(), result.end());
+    }
+    
+    derivedKey.resize(length);
+    return derivedKey;
+}
+//######################################################################################################################################
+//--------------------------------------------------------------------------------------------------------------------------------------
+//######################################################################################################################################
+
+
+
+// HMAC-SHA256 реализация
+//######################################################################################################################################
+//--------------------------------------------------------------------------------------------------------------------------------------
+//######################################################################################################################################
+std::vector<unsigned char> DataEncryptor::HMACSHA256(
+    const std::vector<unsigned char>& key, 
+    const std::vector<unsigned char>& message) {
+    
+    const size_t BLOCK_SIZE = 64;
+    std::vector<unsigned char> preparedKey(BLOCK_SIZE, 0);
+    
+    // Подготовка ключа
+    if (key.size() > BLOCK_SIZE) { // Если ключ длиннее 64 байт - хешируем его
+        auto hashedKey = SHA256(key); 
+        std::copy(hashedKey.begin(), hashedKey.end(), preparedKey.begin());
+    } else {
+        std::copy(key.begin(), key.end(), preparedKey.begin());
+    }
+    
+    std::vector<unsigned char> innerKey = preparedKey;
+    for (size_t i = 0; i < BLOCK_SIZE; ++i) innerKey[i] ^= 0x36; // XOR с 0x36 (padding)
+    
+    //внутреннее хеширование
+    std::vector<unsigned char> innerData = innerKey;
+    innerData.insert(innerData.end(), message.begin(), message.end());
+    auto innerHash = SHA256(innerData);
+    
+    //создание внешнего ключа
+    std::vector<unsigned char> outerKey = preparedKey;
+    for (size_t i = 0; i < BLOCK_SIZE; ++i) outerKey[i] ^= 0x5C; //XOR с 0x5C (padding)
+    
+    //финальное хеширование
+    std::vector<unsigned char> outerData = outerKey;
+    outerData.insert(outerData.end(), innerHash.begin(), innerHash.end());
+    return SHA256(outerData);
+}
+//######################################################################################################################################
+//--------------------------------------------------------------------------------------------------------------------------------------
+//######################################################################################################################################
+
+
+
+// SHA-256 реализация
+//######################################################################################################################################
+//--------------------------------------------------------------------------------------------------------------------------------------
+//######################################################################################################################################
+std::vector<unsigned char> DataEncryptor::SHA256(const std::vector<unsigned char>& input) {
+    
+    //первые 32 бита дробных частей квадратных корней первых 8 простых чисел (2 3 5 7 11 13 17 19).
+    uint32_t h[8] = {
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+        0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
+    };
+    
+    //Формат паддинга: исходные_данные + 0x80 + нули + длина_64бит
+    uint64_t bitLength = input.size() * 8;
+    std::vector<unsigned char> data = input;
+    
+    // Добавление 0x80
+    data.push_back(0x80);
+
+    //Добавление нулей до длины 448 бит (mod 512)
+    while ((data.size() * 8) % 512 != 448) {
+        data.push_back(0x00);
+    }
+    
+    // Добавление длины сообщения (длина_64бит)
+    for (int i = 7; i >= 0; --i) {
+        data.push_back((bitLength >> (i * 8)) & 0xFF);
+    }
+    
+    // Обработка блоков
+    for (size_t chunk = 0; chunk < data.size(); chunk += 64) {
+        uint32_t w[64] = {0};
+        
+        // Подготовка сообщения : преобразование 16 слов (32 бита каждое) из текущего блока
+        for (int i = 0; i < 16; ++i) {
+            w[i] = (data[chunk + i*4] << 24) | (data[chunk + i*4+1] << 16) | (data[chunk + i*4+2] << 8) | data[chunk + i*4+3];
+        }
+        
+        // Расширение сообщения до 64 слов
+        for (int i = 16; i < 64; ++i) {
+
+            //Циклические сдвиги и XOR для рассеивания битов
+            uint32_t s0 = ((w[i-15] >> 7) | (w[i-15] << 25)) ^ ((w[i-15] >> 18) | (w[i-15] << 14)) ^ (w[i-15] >> 3);
+            uint32_t s1 = ((w[i-2] >> 17) | (w[i-2] << 15)) ^ ((w[i-2] >> 19) | (w[i-2] << 13)) ^ (w[i-2] >> 10);
+
+            w[i] = w[i-16] + s0 + w[i-7] + s1;
+        }
+        
+        uint32_t a = h[0], b = h[1], c = h[2], d = h[3];
+        uint32_t e = h[4], f = h[5], g = h[6], h_val = h[7];
+        
+        //цикл сжатия для одностороннего хеширования
+        for (int i = 0; i < 64; ++i) {
+            uint32_t S1 = ((e >> 6) | (e << 26)) ^ ((e >> 11) | (e << 21)) ^ ((e >> 25) | (e << 7));
+            uint32_t ch = (e & f) ^ (~e & g);
+            uint32_t temp1 = h_val + S1 + ch + SHA256_K[i] + w[i];
+            uint32_t S0 = ((a >> 2) | (a << 30)) ^ ((a >> 13) | (a << 19)) ^ ((a >> 22) | (a << 10));
+            uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
+            uint32_t temp2 = S0 + maj;
+            
+            h_val = g; g = f; f = e; e = d + temp1;
+            d = c; c = b; b = a; a = temp1 + temp2;
+        }
+        
+        h[0] += a; h[1] += b; h[2] += c; h[3] += d;
+        h[4] += e; h[5] += f; h[6] += g; h[7] += h_val;
+    }
+    
+    // Конвертирование хеш в байты
+    std::vector<unsigned char> hash(32);
+    for (int i = 0; i < 8; ++i) {
+        hash[i*4] = (h[i] >> 24) & 0xFF;
+        hash[i*4+1] = (h[i] >> 16) & 0xFF;
+        hash[i*4+2] = (h[i] >> 8) & 0xFF;
+        hash[i*4+3] = h[i] & 0xFF;
+    }
+    
+    return hash;
+}
+//######################################################################################################################################
+//--------------------------------------------------------------------------------------------------------------------------------------
+//######################################################################################################################################
