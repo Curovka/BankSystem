@@ -11,11 +11,11 @@ private:
 
     // Криптографические примитивы
     std::vector<unsigned char> generateKey(const std::string& password);
+    std::vector<unsigned char> PBKDF2HMACSHA256(const std::string& password, const std::vector<unsigned char>& salt, int iterations, int length); 
+    std::vector<unsigned char> HMACSHA256(const std::vector<unsigned char>& key, const std::vector<unsigned char>& message);
+    std::vector<unsigned char> SHA256(const std::vector<unsigned char>& input);
 
     // AES реализация в будущем
-    // PBKDF2 реализация в будущем
-    // HMAC-SHA256 реализация в будущем
-    // SHA-256 реализация в будущем
     
 public:
     DataEncryptor(const std::string& password);
