@@ -9,8 +9,8 @@
 class BaseEntity {
 protected:
     std::string id;
-    std::chrono::system_clock::time_point created_at;
-    std::chrono::system_clock::time_point update_at;
+    std::chrono::system_clock::time_point createdAt;
+    std::chrono::system_clock::time_point updateAt;
 
 public:
     BaseEntity();
@@ -19,8 +19,9 @@ public:
 
     //getters
     std::string getId() const { return id;}
-    std::chrono::system_clock::time_point getCreatedAt() const { return created_at; }
-    std::chrono::system_clock::time_point getUpdatedAt() const { return update_at; }
+    std::chrono::system_clock::time_point getCreatedAt() const { return createdAt; }
+    std::chrono::system_clock::time_point getUpdatedAt() const { return updateAt; }
 };
+
 
 #endif
