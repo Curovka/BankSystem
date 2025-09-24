@@ -1,10 +1,10 @@
 // encryption.cpp
-
 #include "../include/encryption.h"
-#include <string>
-#include <vector>
+#include <sstream>
+#include <iomanip>
+#include <cstring>
 #include <random>
-#include <algorithm>
+#include <stdexcept>
 
 // Константы SHA-256
 const uint32_t SHA256_K[64] = {
@@ -20,7 +20,6 @@ const uint32_t SHA256_K[64] = {
     0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208,
     0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
-
 
 // Константы AES S-Box
 const unsigned char AES_SBOX[256] = {
@@ -67,14 +66,14 @@ const unsigned char Rcon[11] = {
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
 };
 
-DataEncryptor::DataEncryptor(const std::string& passwordKey) {
-    key = generateKey(passwordKey);
+const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+DataEncryptor::DataEncryptor(const std::string& password) {
+    key = generateKey(password);
     keyExpansion();
 }
 
-std::string DataEncryptor::hashPassword(const std::string& password) {
-    //
-}
+
 
 // PBKDF2 реализация
 //######################################################################################################################################
@@ -237,7 +236,7 @@ std::vector<unsigned char> DataEncryptor::SHA256(const std::vector<unsigned char
         h[4] += e; h[5] += f; h[6] += g; h[7] += h_val;
     }
     
-    // Конвертирование хеш в байты
+    // Конвертируем хеш в байты
     std::vector<unsigned char> hash(32);
     for (int i = 0; i < 8; ++i) {
         hash[i*4] = (h[i] >> 24) & 0xFF;
@@ -266,7 +265,7 @@ void DataEncryptor::keyExpansion() {
     std::memset(round_keys, 0, sizeof(round_keys));
     
     //Копирование исходного ключа в начало расширенного ключа
-    for (int i = 0; i < key.size() && i < 32; i++) {
+    for (size_t i = 0; i < key.size() && i < 32; i++) {
         round_keys[i] = key[i];
     }
     
@@ -311,6 +310,9 @@ void DataEncryptor::subWord(unsigned char word[4]) {
 //######################################################################################################################################
 //--------------------------------------------------------------------------------------------------------------------------------------
 //######################################################################################################################################
+
+
+
 //AES шифрование реализация
 //######################################################################################################################################
 //--------------------------------------------------------------------------------------------------------------------------------------
@@ -345,7 +347,7 @@ void DataEncryptor::AESEncryptBlock(const unsigned char* input, unsigned char* o
     unsigned char state[BLOCK_SIZE];
     
     // Копируем входные данные в состояние
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
         state[i] = input[i];
     }
     
@@ -365,14 +367,14 @@ void DataEncryptor::AESEncryptBlock(const unsigned char* input, unsigned char* o
     shiftRows(state);
     addRoundKey(state, 14);
     
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
         output[i] = state[i];
     }
 }
 
 //замена байтов для шифрования
 void DataEncryptor::subBytes(unsigned char state[BLOCK_SIZE]) {
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
         state[i] = AES_SBOX[state[i]];
     }
 }
@@ -416,8 +418,20 @@ void DataEncryptor::mixColumns(unsigned char state[BLOCK_SIZE]) {
 }
 
 void DataEncryptor::addRoundKey(unsigned char state[BLOCK_SIZE], int round) {
-    for (int i = 0; i < BLOCK_SIZE; i++) {
-        state[i] ^= round_keys[round * BLOCK_SIZE + i];
+    // Вычисление безопасного индекса
+    const size_t max_safe_index = (sizeof(round_keys) / sizeof(round_keys[0])) * 4;
+    const size_t start_index = round * BLOCK_SIZE;
+    
+    // Проверка границ
+    if (start_index + BLOCK_SIZE > max_safe_index) {
+        throw std::out_of_range("Round key index out of bounds");
+    }
+    
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
+        size_t key_index = start_index + i;
+        uint32_t round_key_word = round_keys[key_index / 4];
+        unsigned char key_byte = (round_key_word >> ((3 - (key_index % 4)) * 8)) & 0xFF;
+        state[i] ^= key_byte;
     }
 }
 //######################################################################################################################################
@@ -457,7 +471,7 @@ void DataEncryptor::AESDecrypt(const std::vector<unsigned char>& ciphertext, con
 void DataEncryptor::AESDecryptBlock(const unsigned char* input, unsigned char* output) {
     unsigned char state[BLOCK_SIZE];
     
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
         state[i] = input[i];
     }
     
@@ -477,14 +491,14 @@ void DataEncryptor::AESDecryptBlock(const unsigned char* input, unsigned char* o
     // Финальный раунд
     addRoundKey(state, 0);
     
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
         output[i] = state[i];
     }
 }
 
 //замена байтов для дешифрования
 void DataEncryptor::invSubBytes(unsigned char state[BLOCK_SIZE]) {    
-    for (int i = 0; i < BLOCK_SIZE; i++) {
+    for (size_t i = 0; i < BLOCK_SIZE; i++) {
         state[i] = INV_SBOX[state[i]];
     }
 }
@@ -547,3 +561,203 @@ unsigned char DataEncryptor::multiply(unsigned char a, unsigned char b) {
 //--------------------------------------------------------------------------------------------------------------------------------------
 //######################################################################################################################################
 
+
+
+//AES шифрование реализация (public)
+std::string DataEncryptor::encryptAES(const std::string& plaintext) {
+    // Генерируем IV (Initialization Vector)
+    auto iv = generateRandomBytes(IV_SIZE);
+    
+    // Добавление padding (размер блока 16 байт) к plaintext
+    std::vector<unsigned char> padded_plaintext(plaintext.begin(), plaintext.end());
+    size_t padding = BLOCK_SIZE - (padded_plaintext.size() % BLOCK_SIZE);
+    for (size_t i = 0; i < padding; ++i) {
+        padded_plaintext.push_back(static_cast<unsigned char>(padding));
+    }
+    
+    // Шифрование
+    std::vector<unsigned char> ciphertext;
+    AESEncrypt(padded_plaintext, iv, ciphertext);
+    
+    // Комбинирование IV + ciphertext в Base64
+    std::vector<unsigned char> combined;
+    combined.insert(combined.end(), iv.begin(), iv.end());
+    combined.insert(combined.end(), ciphertext.begin(), ciphertext.end());
+    
+    //кодирование для передачи
+    return base64Encode(combined);
+}
+
+//AES дешифрование реализация (public)
+std::string DataEncryptor::decryptAES(const std::string& ciphertext) {
+
+    //декодирование
+    auto combined = base64Decode(ciphertext);
+
+    //проверка данных
+    if (combined.size() < IV_SIZE) {
+        throw std::invalid_argument("Invalid ciphertext");
+    }
+    
+    // Извлечение IV и ciphertext
+    std::vector<unsigned char> iv(combined.begin(), combined.begin() + IV_SIZE);
+    std::vector<unsigned char> encrypted_data(combined.begin() + IV_SIZE, combined.end());
+    
+    // Дешифрование
+    std::vector<unsigned char> decrypted_data;
+    AESDecrypt(encrypted_data, iv, decrypted_data);
+    
+    //Проверяем, что шифрование прошло успешно
+    if (decrypted_data.empty()) {
+        throw std::invalid_argument("Decryption failed");
+    }
+    
+    //Удаление padding + проверка
+    size_t padding = decrypted_data.back();
+    if (padding > BLOCK_SIZE || padding > decrypted_data.size()) {
+        throw std::invalid_argument("Invalid padding");
+    }
+
+    decrypted_data.resize(decrypted_data.size() - padding);
+    
+    //преобразование в строку    
+    return std::string(decrypted_data.begin(), decrypted_data.end());
+}
+
+std::string DataEncryptor::hashPassword(const std::string& password) {
+    auto salt = generateRandomBytes(16);
+    int iterations = 100000;
+    
+    //основное хеширование
+    auto hash = PBKDF2HMACSHA256(password, salt, iterations, 32); 
+    
+    //Формат: iterations:salt:hash (все в Base64)
+    //100000:AbCdEfGhIjKlMnO:ZxYwVuTsRqPoNmLkJiHgFeDcBa
+    return std::to_string(iterations) + ":" + 
+           base64Encode(salt) + ":" + 
+           base64Encode(hash);
+}
+
+bool DataEncryptor::verifyPassword(const std::string& password, const std::string& hash) {
+    try {
+        //разбор хеша
+        //Формат: iterations:salt:hash
+        //100000:AbCdEfGhIjKlMnO:ZxYwVuTsRqPoNmLkJiHgFeDcBa
+        size_t pos1 = hash.find(':');
+        size_t pos2 = hash.find(':', pos1 + 1);
+        
+        //проверка формата
+        if (pos1 == std::string::npos || pos2 == std::string::npos) {
+            return false;
+        }
+        
+        //извлечение компонентов
+        int iterations = std::stoi(hash.substr(0, pos1));
+        auto salt = base64Decode(hash.substr(pos1 + 1, pos2 - pos1 - 1));
+        auto stored_hash = base64Decode(hash.substr(pos2 + 1));
+        
+        //вычисление + сравнение хешей
+        auto computed_hash = PBKDF2HMACSHA256(password, salt, iterations, 32);
+        return computed_hash == stored_hash;
+    } catch (...) {
+        return false;
+    }
+}
+
+//генерация вектора со случайными байтами
+std::vector<unsigned char> DataEncryptor::generateRandomBytes(size_t length) {
+    std::vector<unsigned char> result(length);
+    std::random_device rd;
+    std::uniform_int_distribution<unsigned short> dist(0, 255);
+    
+    for (size_t i = 0; i < length; ++i) {
+        result[i] = static_cast<unsigned char>(dist(rd));
+    }
+    return result;
+}
+
+//кодирование
+std::string DataEncryptor::base64Encode(const std::vector<unsigned char>& data) {
+    std::string result;
+    int i = 0;
+    unsigned char char_array_3[3];
+    unsigned char char_array_4[4];
+
+    //обработка данных блоками по 3 байта (24 бита), которые преобразуются в 4 символа Base64 (по 6 бит каждый).
+    for (size_t n = 0; n < data.size(); n++) {
+        char_array_3[i++] = data[n];
+        if (i == 3) {
+            char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;                                        // Первые 6 бит первого байта
+            char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);    // Последние 2 бита первого + первые 4 второго
+            char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);    // Последние 4 бита второго + первые 2 третьего
+            char_array_4[3] = char_array_3[2] & 0x3f;                                               // Последние 6 бит третьего байта
+            
+            for(i = 0; i < 4; i++) result += base64_chars[char_array_4[i]];
+            i = 0;
+        }
+    }
+    
+    //если количество байтов не кратно 3, добавляется паддинг:
+    if (i > 0) {
+        for(int j = i; j < 3; j++) char_array_3[j] = '\0';
+        
+        char_array_4[0] = (char_array_3[0] & 0xfc) >> 2;
+        char_array_4[1] = ((char_array_3[0] & 0x03) << 4) + ((char_array_3[1] & 0xf0) >> 4);
+        char_array_4[2] = ((char_array_3[1] & 0x0f) << 2) + ((char_array_3[2] & 0xc0) >> 6);
+        
+        for (int j = 0; j < i + 1; j++) result += base64_chars[char_array_4[j]];
+        while(i++ < 3) result += '=';
+    }
+    
+    return result;
+}
+
+//декодирование
+std::vector<unsigned char> DataEncryptor::base64Decode(const std::string& encoded) {
+    
+    std::vector<unsigned char> result;
+    int i = 0;
+    unsigned char char_array_4[4], char_array_3[3];
+    
+    for (size_t n = 0; n < encoded.size(); n++) {
+        if (encoded[n] == '=') break;
+        
+        char_array_4[i++] = encoded[n];
+        if (i == 4) {
+            //декодирование групп из 4 символов
+            for (i = 0; i < 4; i++)
+                char_array_4[i] = base64_chars.find(char_array_4[i]);
+            
+            // Преобразование 4 шестибитных значений в 3 байта (обратно кодированию)
+            char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+            char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+            char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
+            
+            for (i = 0; i < 3; i++) result.push_back(char_array_3[i]);
+            i = 0;
+        }
+    }
+    
+    //обработка неполных групп (учитывается padding)
+    if (i > 0) {
+        for (int j = i; j < 4; j++) char_array_4[j] = 0;
+        for (int j = 0; j < 4; j++) char_array_4[j] = base64_chars.find(char_array_4[j]);
+        
+        char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
+        char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
+        
+        for (int j = 0; j < i - 1; j++) result.push_back(char_array_3[j]);
+    }
+    
+    return result;
+}
+
+std::string DataEncryptor::maskCardNumber(const std::string& cardNumber) {
+    if (cardNumber.length() != 16) return "****";
+    return "**** **** **** " + cardNumber.substr(12);
+}
+
+std::string DataEncryptor::generateSecureRandom(size_t length) {
+    auto random_bytes = generateRandomBytes(length);
+    return base64Encode(random_bytes);
+}
