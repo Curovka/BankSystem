@@ -10,33 +10,37 @@
 //
 //IV (Initialization Vector) - случайные данные для обеспечения уникальности шифрования
 
-#include <vector>
-#include <string>
-#include <cstdint>
-
+// encryption.h
 #ifndef ENCRYPTION_H
 #define ENCRYPTION_H
+
+#include "resources.h"
 
 class DataEncryptor {
 private:
     std::vector<unsigned char> key;
-
-    // Криптографические примитивы
-    std::vector<unsigned char> generateKey(const std::string& password);
-    std::vector<unsigned char> PBKDF2HMACSHA256(const std::string& password, const std::vector<unsigned char>& salt, int iterations, int length); 
-    std::vector<unsigned char> HMACSHA256(const std::vector<unsigned char>& key, const std::vector<unsigned char>& message);
-    std::vector<unsigned char> SHA256(const std::vector<unsigned char>& input);
-
-    // Константы AES
     static const size_t BLOCK_SIZE = 16;
     static const size_t KEY_SIZE = 32;
     static const size_t IV_SIZE = 16;
     static const size_t NUM_ROUNDS = 14;
     uint32_t round_keys[60];
 
+    // Криптографические примитивы
+    std::vector<unsigned char> generateKey(const std::string& password);
+    std::vector<unsigned char> PBKDF2HMACSHA256(const std::string& password, 
+                                               const std::vector<unsigned char>& salt, 
+                                               int iterations, int length);
+    std::vector<unsigned char> HMACSHA256(const std::vector<unsigned char>& key, 
+                                         const std::vector<unsigned char>& message);
+    std::vector<unsigned char> SHA256(const std::vector<unsigned char>& input);
+
     // AES реализация
-    void AESEncrypt(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& iv, std::vector<unsigned char>& ciphertext);
-    void AESDecrypt(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& iv, std::vector<unsigned char>& plaintext);
+    void AESEncrypt(const std::vector<unsigned char>& plaintext, 
+                   const std::vector<unsigned char>& iv, 
+                   std::vector<unsigned char>& ciphertext);
+    void AESDecrypt(const std::vector<unsigned char>& ciphertext, 
+                   const std::vector<unsigned char>& iv, 
+                   std::vector<unsigned char>& plaintext);
     void AESEncryptBlock(const unsigned char* input, unsigned char* output);
     void AESDecryptBlock(const unsigned char* input, unsigned char* output);
     
@@ -49,7 +53,6 @@ private:
     unsigned char multiply(unsigned char a, unsigned char b);
     void addRoundKey(unsigned char state[BLOCK_SIZE], int round);
 
-
     void keyExpansion();
     void rotWord(unsigned char word[4]);
     void subWord(unsigned char word[4]);
@@ -58,8 +61,6 @@ private:
     std::vector<unsigned char> generateRandomBytes(size_t length);
     std::string base64Encode(const std::vector<unsigned char>& data);
     std::vector<unsigned char> base64Decode(const std::string& data);
-    
-    
     
 public:
     DataEncryptor(const std::string& password);
@@ -72,4 +73,4 @@ public:
     std::string generateSecureRandom(size_t length);
 };
 
-#endif
+#endif // ENCRYPTION_H
