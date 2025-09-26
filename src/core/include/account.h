@@ -1,47 +1,52 @@
+// account.h
+#ifndef ACCOUNT_H
+#define ACCOUNT_H
 
 #include "baseEntity.h"
-#include <chrono>
-#include <memory>
 
-#ifndef ACCOUNT.H
-#define ACCOUNT.H
+enum class Currency { RUB, USD, EUR };
+enum class AccountStatus { OPEN, BLOCKED, CLOSED };
 
-enum class Currency {RUB};
-enum class AccountStatus {OPEN, BLOCKED, CLOSED};
-
-class Account: public BaseEntity{
+class Account : public BaseEntity {
 private:
     std::string userId;
     std::string productId;
     std::string accountNumber;
     double balance;
-    double availableBalance; //tmp balance для операций
+    double availableBalance;
     Currency currency;
-    double credit_limit;
+    double creditLimit;
     double interestRate;
     AccountStatus status;
     std::chrono::system_clock::time_point openedAt;
     std::chrono::system_clock::time_point closedAt;
 
 public:
-    Account(const std::string& userId, const std::string& productId);
+    Account(const std::string& userId, const std::string& productId, Currency currency = Currency::RUB);
 
     bool deposit(double amount);
     bool withdraw(double amount);
-    bool transfer(std::unique_ptr<Account> toAccount, double amount);
+    bool transfer(std::shared_ptr<Account> toAccount, double amount);
     
     void calculateInterest();
     void block();
     void unblock();
     void close();
-    bool IsActive() const {return status == AccountStatus::OPEN;}
-    bool hasSufficientFunds(double amount) const { return availableBalance >= amount;}
+    bool isActive() const { return status == AccountStatus::OPEN; }
+    bool hasSufficientFunds(double amount) const { return availableBalance >= amount; }
 
     void generateAccountNumber();
 
-    //getters
-    double getAvailableBalance() const {return availableBalance;}
-
+    // getters
+    std::string getUserId() const { return userId; }
+    std::string getProductId() const { return productId; }
+    std::string getAccountNumber() const { return accountNumber; }
+    double getBalance() const { return balance; }
+    double getAvailableBalance() const { return availableBalance; }
+    Currency getCurrency() const { return currency; }
+    double getCreditLimit() const { return creditLimit; }
+    double getInterestRate() const { return interestRate; }
+    AccountStatus getStatus() const { return status; }
 };
 
-#endif
+#endif // ACCOUNT_H
