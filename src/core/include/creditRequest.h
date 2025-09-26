@@ -1,10 +1,8 @@
 // creditRequest.h
+#ifndef CREDIT_REQUEST_H
+#define CREDIT_REQUEST_H
 
-#include <string>
-#include <chrono>
-
-#ifndef CREDITREQUEST.H
-#define CREDITREQUEST.H
+#include "resources.h"
 
 enum class CreditRequestStatus { PENDING, APPROVED, REJECTED, CANCELLED };
 
@@ -13,25 +11,32 @@ private:
     std::string userId;
     std::string productId;
     double amount;
+    int termMonths;
     CreditRequestStatus status;
-    double monthly_payment;
-    double interest_rate;
+    double monthlyPayment;
+    double interestRate;
     std::string approvedBy;
     std::chrono::system_clock::time_point approvedAt;
     std::string rejectionReason;
-    std::string createdAccountId; // Создание кредитного счета
-    int term; // пока срок будет исчисляться в месяцах 
+    std::string createdAccountId;
     
-    // purpose //
-
 public:
-    CreditRequest(const std::string& userId, const std::string& productId, double amount, int term);
+    CreditRequest(const std::string& userId, const std::string& productId, 
+                 double amount, int termMonths);
     
     double calculateMonthlyPayment();
     bool approve(const std::string& approvedBy);
     void reject(const std::string& reason);
     bool isValid() const;
-    std::string createAccount(); // Создание кредитного счета
+    std::string createAccount();
+
+    // getters
+    std::string getUserId() const { return userId; }
+    std::string getProductId() const { return productId; }
+    double getAmount() const { return amount; }
+    int getTermMonths() const { return termMonths; }
+    CreditRequestStatus getStatus() const { return status; }
+    double getMonthlyPayment() const { return monthlyPayment; }
 };
 
-#endif
+#endif // CREDIT_REQUEST_H
