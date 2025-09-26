@@ -1,13 +1,15 @@
-//base entiry .cpp
+// baseEntity.cpp
+#include "baseEntity.h"
 
-#include "../include/baseEntity.h"
-#include <iostream>
-#include "uuid.cpp"
+// Объявление функции из uuid.cpp
+namespace uuid {
+    std::string generateUUIDv4();
+}
 
 BaseEntity::BaseEntity() {
     id = generateUUID();
     createdAt = std::chrono::system_clock::now();
-    updateAt = createdAt;
+    updatedAt = createdAt;
 }
 
 std::string BaseEntity::generateUUID() {
@@ -15,5 +17,5 @@ std::string BaseEntity::generateUUID() {
 }
 
 void BaseEntity::updateTimestamp() {
-    updateAt = std::chrono::system_clock::now();
+    updatedAt = std::chrono::system_clock::now();
 }
