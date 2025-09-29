@@ -4,7 +4,6 @@
 #include <chrono>
 #include <algorithm>
 
-// Конфигурация банка (добавьте в отдельный файл config.h при необходимости)
 namespace BankConfig {
     const int MAX_LOGIN_ATTEMPTS = 5;
 }
@@ -98,4 +97,5 @@ void User::unblockUser() {
 
 std::string User::getFullName() const {
     return firstName + " " + lastName + (patronymic.empty() ? "" : " " + patronymic);
+
 }
