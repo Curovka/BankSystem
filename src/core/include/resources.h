@@ -20,4 +20,5 @@
 #include <functional>
 #include <algorithm>
 
+
 #endif // RESOURCES_H

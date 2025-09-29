@@ -1,15 +1,4 @@
-//функция генерации UUID
-//
-//UUID_v4 имеет формат: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
-//4 - версия 
-//y - вариант
-//1414f37d-bb9f-4fe6-89d5-90749291a1e0
-//03063eb0-2288-47e0-a525-fda6d2b01198
-//c215f05a-8854-49cb-bdd3-e91fdf5d7a66
-//a3751ed6-860d-4947-bfee-78baeeed2383
-//
-//
-
+// uuid.cpp
 #include "resources.h"
 
 namespace uuid {

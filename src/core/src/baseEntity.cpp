@@ -1,5 +1,5 @@
 // baseEntity.cpp
-#include "baseEntity.h"
+#include "../include/baseEntity.h"
 
 // Объявление функции из uuid.cpp
 namespace uuid {

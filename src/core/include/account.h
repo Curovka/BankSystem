@@ -35,6 +35,9 @@ public:
     bool isActive() const { return status == AccountStatus::OPEN; }
     bool hasSufficientFunds(double amount) const { return availableBalance >= amount; }
 
+    void setCreditLimit(double limit) { creditLimit = limit; updateTimestamp(); }
+    void setInterestRate(double rate) { interestRate = rate; updateTimestamp(); }
+
     void generateAccountNumber();
 
     // getters

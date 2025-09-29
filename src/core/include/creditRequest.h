@@ -21,8 +21,7 @@ private:
     std::string createdAccountId;
     
 public:
-    CreditRequest(const std::string& userId, const std::string& productId, 
-                 double amount, int termMonths);
+    CreditRequest(const std::string& userId, const std::string& productId, double amount, int termMonths);
     
     double calculateMonthlyPayment();
     bool approve(const std::string& approvedBy);

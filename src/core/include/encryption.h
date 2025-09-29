@@ -1,20 +1,11 @@
-// encryption.h
-//
-//PBKDF2 - преобразование пароля в ключ с помощью соли и множества итераций
-//
-//SHA-256 - криптографическая хеш-функция с устойчивостью к коллизиям
-//
-//HMAC - код аутентификации сообщений на основе хеш-функции
-//
-//Соль (Salt) - случайные данные для защиты от rainbow-таблиц
-//
-//IV (Initialization Vector) - случайные данные для обеспечения уникальности шифрования
-
-// encryption.h
 #ifndef ENCRYPTION_H
 #define ENCRYPTION_H
 
-#include "resources.h"
+#include <vector>
+#include <cstddef>
+#include <cstdint>
+#include <string>
+
 
 class DataEncryptor {
 private:
@@ -25,22 +16,15 @@ private:
     static const size_t NUM_ROUNDS = 14;
     uint32_t round_keys[60];
 
-    // Криптографические примитивы
+    // Приватные криптографические примитивы
     std::vector<unsigned char> generateKey(const std::string& password);
-    std::vector<unsigned char> PBKDF2HMACSHA256(const std::string& password, 
-                                               const std::vector<unsigned char>& salt, 
-                                               int iterations, int length);
-    std::vector<unsigned char> HMACSHA256(const std::vector<unsigned char>& key, 
-                                         const std::vector<unsigned char>& message);
+    std::vector<unsigned char> PBKDF2HMACSHA256(const std::string& password, const std::vector<unsigned char>& salt, int iterations, int length);
+    std::vector<unsigned char> HMACSHA256(const std::vector<unsigned char>& key, const std::vector<unsigned char>& message);
     std::vector<unsigned char> SHA256(const std::vector<unsigned char>& input);
 
     // AES реализация
-    void AESEncrypt(const std::vector<unsigned char>& plaintext, 
-                   const std::vector<unsigned char>& iv, 
-                   std::vector<unsigned char>& ciphertext);
-    void AESDecrypt(const std::vector<unsigned char>& ciphertext, 
-                   const std::vector<unsigned char>& iv, 
-                   std::vector<unsigned char>& plaintext);
+    void AESEncrypt(const std::vector<unsigned char>& plaintext, const std::vector<unsigned char>& iv, std::vector<unsigned char>& ciphertext);
+    void AESDecrypt(const std::vector<unsigned char>& ciphertext, const std::vector<unsigned char>& iv, std::vector<unsigned char>& plaintext);
     void AESEncryptBlock(const unsigned char* input, unsigned char* output);
     void AESDecryptBlock(const unsigned char* input, unsigned char* output);
     
@@ -59,6 +43,8 @@ private:
     
     // Вспомогательные функции
     std::vector<unsigned char> generateRandomBytes(size_t length);
+
+public:  // временно публичное для тестирования
     std::string base64Encode(const std::vector<unsigned char>& data);
     std::vector<unsigned char> base64Decode(const std::string& data);
     
@@ -73,4 +59,4 @@ public:
     std::string generateSecureRandom(size_t length);
 };
 
-#endif // ENCRYPTION_H
+#endif //ENCRYPTION_H

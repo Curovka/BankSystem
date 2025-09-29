@@ -37,8 +37,7 @@ public:
     bool authenticate(const std::string& password);
     bool changePassword(const std::string& oldPassword, const std::string& newPassword);
     
-    void updateProfile(const std::string& firstName, const std::string& lastName, 
-                      const std::string& phone, const std::string& email);
+    void updateProfile(const std::string& firstName, const std::string& lastName, const std::string& phone, const std::string& email);
     double calculateCreditRating();
     
     bool isActive() const { return status == UserStatus::ACTIVE; }
