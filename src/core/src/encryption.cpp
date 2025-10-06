@@ -73,6 +73,12 @@ DataEncryptor::DataEncryptor(const std::string& password) {
     keyExpansion();
 }
 
+DataEncryptor::~DataEncryptor() {
+    // Очистка чувствительных данных из памяти
+    std::fill(key.begin(), key.end(), 0);
+    std::fill(std::begin(round_keys), std::end(round_keys), 0);
+}
+
 
 
 // PBKDF2 реализация

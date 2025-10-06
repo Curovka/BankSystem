@@ -33,6 +33,7 @@ private:
 
 public:
     User(const std::string& username, const std::string& email, const std::string& password);
+    virtual ~User() = default;
     
     bool authenticate(const std::string& password);
     bool changePassword(const std::string& oldPassword, const std::string& newPassword);

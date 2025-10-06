@@ -24,6 +24,8 @@ private:
 public:
     Account(const std::string& userId, const std::string& productId, Currency currency = Currency::RUB);
 
+    virtual ~Account() = default; //пока логика не нужна
+
     bool deposit(double amount);
     bool withdraw(double amount);
     bool transfer(std::shared_ptr<Account> toAccount, double amount);

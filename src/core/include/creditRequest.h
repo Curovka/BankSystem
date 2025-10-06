@@ -22,6 +22,7 @@ private:
     
 public:
     CreditRequest(const std::string& userId, const std::string& productId, double amount, int termMonths);
+    ~CreditRequest() = default; // аналогично card и account
     
     double calculateMonthlyPayment();
     bool approve(const std::string& approvedBy);

@@ -24,8 +24,8 @@ private:
     std::string failedReason;
     
 public:
-    Transaction(const std::string& fromAccount, const std::string& toAccount, 
-                double amount, TransactionType type, Currency currency);
+    Transaction(const std::string& fromAccount, const std::string& toAccount, double amount, TransactionType type, Currency currency);
+    virtual ~Transaction() = default;
     
     bool process();
     void complete();

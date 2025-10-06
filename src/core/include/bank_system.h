@@ -26,6 +26,7 @@ private:
     
 public:
     BankSystem();
+    ~BankSystem();
 
     std::vector<std::shared_ptr<Account>> findAccountsByUserId(const std::string& userId);
     std::shared_ptr<User> findUserByUsername(const std::string& username);
@@ -54,6 +55,8 @@ public:
     size_t getUsersCount() const { return users.size(); }
     size_t getAccountsCount() const { return accounts.size(); }
     size_t getCardsCount() const { return cards.size(); }
+
+    void clearAllData();
 };
 
 #endif // BANK_SYSTEM_H

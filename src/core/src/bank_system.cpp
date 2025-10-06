@@ -5,6 +5,24 @@ BankSystem::BankSystem() {
     encryptor = std::make_unique<DataEncryptor>("bank_system_key");
 }
 
+BankSystem::~BankSystem() {
+    clearAllData();
+}
+
+void BankSystem::clearAllData() {
+    std::lock_guard<std::mutex> lock1(usersMutex);
+    std::lock_guard<std::mutex> lock2(accountsMutex);
+    std::lock_guard<std::mutex> lock3(cardsMutex);
+    std::lock_guard<std::mutex> lock4(transactionsMutex);
+    std::lock_guard<std::mutex> lock5(creditRequestsMutex);
+    
+    users.clear();
+    accounts.clear();
+    cards.clear();
+    transactions.clear();
+    creditRequests.clear();
+}
+
 std::shared_ptr<User> BankSystem::registerUser(const std::string& username, const std::string& email, const std::string& password, const std::string& role) {
     std::lock_guard<std::mutex> lock(usersMutex);
     

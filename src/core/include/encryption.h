@@ -43,13 +43,12 @@ private:
     
     // Вспомогательные функции
     std::vector<unsigned char> generateRandomBytes(size_t length);
-
-public:  // временно публичное для тестирования
     std::string base64Encode(const std::vector<unsigned char>& data);
     std::vector<unsigned char> base64Decode(const std::string& data);
     
 public:
     DataEncryptor(const std::string& password);
+    ~DataEncryptor();
     
     std::string encryptAES(const std::string& plaintext);
     std::string decryptAES(const std::string& ciphertext);

@@ -29,6 +29,7 @@ private:
 
 public:
     Card(const std::string& accountId, const std::string& holderName, CardType type);
+    ~Card() = default; //аналогично account
 
     bool validatePIN(const std::string& pin);
     bool changePIN(const std::string& oldPin, const std::string& newPin);

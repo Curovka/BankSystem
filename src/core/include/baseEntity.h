@@ -1,6 +1,6 @@
 // baseEntity.h
-#ifndef BASE_ENTITY_H
-#define BASE_ENTITY_H
+#ifndef BASEENTITY_H
+#define BASEENTITY_H
 
 #include "resources.h"
 
@@ -23,4 +23,4 @@ public:
     std::chrono::system_clock::time_point getUpdatedAt() const { return updatedAt; }
 };
 
-#endif // BASE_ENTITY_H
+#endif // BASEENTITY_H
